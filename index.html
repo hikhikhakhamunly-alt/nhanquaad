@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nhận quà — Stock & Fish</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;color:#fff4e0;font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif;
+  background:radial-gradient(circle at 20% 10%,#ff9a3c 0,#7a1f5c 35%,#1a0a2e 75%,#0b0418 100%);overflow-x:hidden}
+.sparks{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.sparks i{position:absolute;width:6px;height:6px;border-radius:50%;background:#ffd98a;opacity:.7;animation:fall linear infinite}
+@keyframes fall{from{transform:translateY(-10vh) rotate(0)}to{transform:translateY(110vh) rotate(360deg)}}
+.wrap{position:relative;z-index:1;max-width:460px;margin:0 auto;padding:28px 18px 40px}
+.hero{text-align:center}
+.gift{font-size:70px;display:inline-block;animation:bounce 2.4s ease-in-out infinite}
+@keyframes bounce{50%{transform:translateY(-10px) rotate(-4deg)}}
+h1{margin:6px 0 4px;font-size:30px;font-weight:900;letter-spacing:1px;color:#ffd98a;text-shadow:0 3px 0 #7a1f5c}
+.sub{color:#ffc7a0;margin:0 0 22px}
+.card{background:rgba(20,6,30,.72);border:1px solid rgba(255,190,110,.35);border-radius:20px;padding:20px;backdrop-filter:blur(6px);box-shadow:0 14px 40px rgba(0,0,0,.45);margin-bottom:16px;animation:rise .6s ease both}
+@keyframes rise{from{transform:translateY(16px);opacity:0}}
+label{display:block;font-size:13px;color:#ffc7a0;margin:10px 0 5px}
+input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #ffb35c;background:#14061e;color:#fff;font:inherit;text-transform:uppercase;letter-spacing:1px;transition:box-shadow .2s}
+input:focus{outline:none;box-shadow:0 0 0 3px rgba(255,179,92,.35)}
+button{width:100%;margin-top:12px;padding:14px;border:0;border-radius:14px;font:inherit;font-weight:900;font-size:16px;color:#2a0a14;cursor:pointer;background:linear-gradient(135deg,#ffd98a,#ff8a3c);box-shadow:0 6px 0 #b8501c;transition:transform .08s,box-shadow .08s}
+button:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 #b8501c}
+button:disabled{opacity:.55;cursor:not-allowed}
+button.ghost{background:transparent;color:#ffd98a;box-shadow:none;border:1px solid #ffb35c;font-size:14px;padding:10px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #2a0a14;border-top-color:transparent;border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-left:6px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.result{margin-top:14px;padding:14px;border-radius:14px;text-align:center;font-weight:800;display:none;animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+.result.ok{display:block;background:rgba(80,255,160,.15);border:1px solid #6dffb0;color:#b8ffd6}
+.result.err{display:block;background:rgba(255,80,110,.15);border:1px solid #ff6e8a;color:#ffc2cf}
+.big{font-size:26px;display:block;margin-bottom:4px}
+.hist{margin:0;padding:0;list-style:none}
+.hist li{padding:9px 0;border-bottom:1px dashed rgba(255,190,110,.25);display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.hist li span:last-child{color:#ffd98a;font-weight:700}
+.muted{color:#c99a7a;font-size:13px}
+.hidden{display:none!important}
+.userrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px}
+.userrow b{color:#ffd98a}
+.linkbtn{width:auto;margin:0;padding:6px 12px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="sparks" id="sparks"></div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="gift">🎁</div>
+    <h1>NHẬN QUÀ</h1>
+    <p class="sub">Nhập mã quà do admin phát để nhận xu, buff hoặc danh hiệu.</p>
+  </div>
+
+  <!-- ĐĂNG NHẬP -->
+  <div class="card" id="loginCard">
+    <label>Tên đăng nhập game</label>
+    <input id="lName" style="text-transform:none" autocomplete="username">
+    <label>Mật khẩu</label>
+    <input id="lPass" type="password" style="text-transform:none" autocomplete="current-password">
+    <button id="lBtn">Đăng nhập</button>
+    <div class="muted" style="margin-top:10px">Dùng đúng tài khoản bạn chơi trong game.</div>
+  </div>
+
+  <!-- NHẬP MÃ -->
+  <div class="card hidden" id="redeemCard">
+    <div class="userrow">
+      <span>Xin chào, <b id="uName"></b></span>
+      <button class="ghost linkbtn" id="logout">Thoát</button>
+    </div>
+    <label>Mã quà</label>
+    <input id="code" placeholder="VD: VIPSUPER-AB12CD34" maxlength="40" autocomplete="off">
+    <button id="rBtn">🎁 Nhận quà</button>
+    <div class="result" id="res"></div>
+    <div class="muted" style="margin-top:12px">Xu sẽ cộng vào ví khi bạn mở game. Mỗi mã chỉ dùng được một lần.</div>
+  </div>
+
+  <!-- LỊCH SỬ PHIÊN -->
+  <div class="card hidden" id="histCard">
+    <b style="color:#ffd98a">Đã nhận trong phiên này</b>
+    <ul class="hist" id="hist"></ul>
+    <div class="muted" id="histEmpty">Chưa nhận mã nào.</div>
+  </div>
+</div>
+
+<script>
+/* URL Apps Script (cùng máy chủ với game) */
+const API='https://script.google.com/macros/s/AKfycbxWjJjYsgyLci4teWEdzp7SocLfpO9WnmwErbyq1-ZB2NYurcVftXgE0WjvTR2WLhh15A/exec';
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.floor(Number(n)||0).toLocaleString('vi-VN');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let ME=null, HIST=[];
+
+/* Hạt rơi trang trí */
+(function(){
+  const box=$('sparks');
+  for(let i=0;i<22;i++){
+    const s=document.createElement('i');
+    s.style.cssText=`left:${Math.random()*100}%;animation-duration:${8+Math.random()*10}s;animation-delay:${-Math.random()*12}s;opacity:${.3+Math.random()*.6};transform:scale(${.5+Math.random()})`;
+    box.appendChild(s);
+  }
+})();
+
+async function api(body){
+  let r;
+  try{r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})}
+  catch(e){throw new Error('Không kết nối được máy chủ')}
+  let j;
+  try{j=await r.json()}catch(e){throw new Error('Máy chủ trả về sai định dạng')}
+  if(!j.ok){const e=new Error(j.error||'Lỗi');e.code=j.code;throw e}
+  return j;
+}
+function busy(btn,on){
+  btn.disabled=on;
+  const sp=btn.querySelector('.spin');
+  if(on&&!sp)btn.insertAdjacentHTML('beforeend','<span class="spin"></span>');
+  if(!on&&sp)sp.remove();
+}
+function show(msg,ok){
+  const r=$('res');
+  r.className='result '+(ok?'ok':'err');
+  r.innerHTML=ok?`<span class="big">🎉</span>${esc(msg)}`:`⚠️ ${esc(msg)}`;
+}
+
+/* ĐĂNG NHẬP: dùng thao tác login có sẵn, không lưu mật khẩu lâu dài */
+$('lBtn').onclick=async()=>{
+  const name=$('lName').value.trim(),pass=$('lPass').value;
+  if(!name||!pass)return alert('Nhập tên và mật khẩu');
+  busy($('lBtn'),true);
+  try{
+    await api({action:'login',name,pass});
+    ME={name,pass};
+    sessionStorage.setItem('rw',JSON.stringify(ME));
+    enter();
+  }catch(e){alert(e.message)}
+  finally{busy($('lBtn'),false)}
+};
+['lName','lPass'].forEach(id=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter')$('lBtn').click()}));
+
+function enter(){
+  $('loginCard').classList.add('hidden');
+  $('redeemCard').classList.remove('hidden');
+  $('histCard').classList.remove('hidden');
+  $('uName').textContent=ME.name;
+  $('code').focus();
+}
+
+$('rBtn').onclick=async()=>{
+  const code=$('code').value.trim();
+  if(!code)return show('Nhập mã quà trước',false);
+  busy($('rBtn'),true);
+  $('res').className='result';
+  try{
+    const j=await api({action:'sync',name:ME.name,pass:ME.pass,since:0,wallet:0,base:0,
+      state:{},score:0,op:'redeem',data:{code}});
+    show(j.message,true);
+    HIST.unshift({code:code.toUpperCase(),msg:j.message});
+    renderHist();
+    $('code').value='';
+  }catch(e){
+    if(e.code==='auth'||e.code==='locked'||e.code==='kick'){
+      show(e.message,false);
+      if(e.code!=='auth')return;
+      logout();
+    }else show(e.message,false);
+  }finally{busy($('rBtn'),false)}
+};
+$('code').addEventListener('keydown',e=>{if(e.key==='Enter')$('rBtn').click()});
+
+function renderHist(){
+  $('histEmpty').classList.toggle('hidden',HIST.length>0);
+  $('hist').innerHTML=HIST.map(h=>`<li><span>${esc(h.code)}</span><span>${esc(h.msg)}</span></li>`).join('');
+}
+
+function logout(){
+  sessionStorage.removeItem('rw');
+  location.reload();
+}
+$('logout').onclick=logout;
+
+/* Khôi phục phiên trong cùng tab */
+const saved=sessionStorage.getItem('rw');
+if(saved){try{ME=JSON.parse(saved);enter()}catch(e){sessionStorage.removeItem('rw')}}
+</script>
+</body>
+</html>
